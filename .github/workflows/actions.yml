@@ -28,18 +28,14 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          GIT_SHA: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend ./view
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend
+          docker build -t frontend ./view
+          docker push frontend
           
       - name: Build, tag, and push backend image to Amazon ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          GIT_SHA: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:backend ./api
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend
+          docker build -t backend ./api
+          docker push backend
