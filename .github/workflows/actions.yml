@@ -30,8 +30,8 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           GIT_SHA: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$GIT_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend-latest ./view
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend-$GIT_SHA
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:frontend ./view
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:frontend
           
       - name: Build, tag, and push backend image to Amazon ECR
@@ -40,6 +40,6 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           GIT_SHA: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:backend-$GIT_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:backend-latest ./api
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend-$GIT_SHA
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:backend ./api
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:backend
