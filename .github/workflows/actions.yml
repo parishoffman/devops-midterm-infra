@@ -8,36 +8,35 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+        steps:
+      - name: Checkout Source Repo
+        uses: actions/checkout@v4
         with:
           repository: parishoffman/devops-midterm
-        
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token : ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_REGION }}
-          
+
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-      
-      - name: Build, tag, and push frontend image to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker images
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
+          TAG: ${{ needs.determine-deployment.outputs.tag }}
         run: |
-          docker build -t frontend ./view
-          docker push frontend
-          
-      - name: Build, tag, and push backend image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        run: |
-          docker build -t backend ./api
-          docker push backend
+          for service in view api; do
+            cd $service
+            docker build -t $service .
+
+            docker tag $service $ECR_REPOSITORY:$service
+
+            docker push $ECR_REPOSITORY:$service
+            cd ..
+          done
