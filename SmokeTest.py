@@ -2,6 +2,7 @@ import boto3
 import paramiko
 import os
 import time
+import io
 
 # AWS credentials are passed via environment variables
 ec2 = boto3.resource('ec2', region_name='us-east-1')
