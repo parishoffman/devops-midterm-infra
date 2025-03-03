@@ -62,8 +62,7 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} << 'EOF'
             # Pull latest images
-            echo $AWS_REGION
-            docker login -u AWS -p $(aws ecr get-login-password --region $AWS_REGION) $ECR_REPOSITORY
+            docker login -u AWS -p $(aws ecr get-login-password --region us-east-1) $ECR_REPOSITORY
             
             # Stop existing containers if they exist
             docker stop view api || true
