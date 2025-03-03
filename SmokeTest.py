@@ -10,7 +10,7 @@ instance = ec2.create_instances(
     MinCount=1, MaxCount=1,
     InstanceType='t2.large',
     KeyName=os.getenv('AWS_KEY_NAME'),
-    SecurityGroups=[
+    SecurityGroupIds=[
         'sg-06bc98aae2851c95d', 
         'sg-0b612366973fc03e9',
         'sg-0243c5c36dc011edd',
