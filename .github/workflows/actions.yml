@@ -39,3 +39,32 @@ jobs:
             docker push $ECR_REPOSITORY:$service
             cd ..
           done
+          
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
+      - name: SSH into QA EC2 and update services
+        run: |
+          ssh ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            # Pull latest images
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+            
+            # Stop existing containers if they exist
+            docker stop view api || true
+            docker rm view api || true
+            
+            # Pull latest images
+            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:view
+            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:api
+            
+            # Start new containers
+            docker run -d --name view -p 5173:5173 ${{ secrets.ECR_REPOSITORY_URI }}:view
+            docker run -e DB_USER=${{ secrets.DB_USER }} -e 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' -e DB_HOST=${{ secrets.DB_HOST }} -e DB_POST=${{ secrets.DB_POST }} -e DB_DATABASE=${{ secrets.DB_DATABASE }}
+            
+            # Cleanup old images (optional)
+            docker image prune -a -f
+          EOF
