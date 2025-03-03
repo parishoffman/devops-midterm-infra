@@ -47,6 +47,7 @@ jobs:
       
       - name: SSH into QA EC2 and update services
         env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REPO: ${{ secrets.ECR_REPOSITORY_URI }}
@@ -61,25 +62,25 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} << 'EOF'
             # Pull latest images
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+            docker login -u AWS -p $(aws ecr get-login-password --region $AWS_REGION) $ECR_REPOSITORY
             
             # Stop existing containers if they exist
             docker stop view api || true
             docker rm view api || true
             
             # Pull latest images
-            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:view
-            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:api
+            docker pull $ECR_REPOSITORY:view
+            docker pull $ECR_REPOSITORY:api
             
             # Start new containers
-            docker run -d --name view -p 5173:5173 ${{ secrets.ECR_REPOSITORY_URI }}:view
+            docker run -d --name view -p 5173:5173 $ECR_REPOSITORY:view
             docker run -d --name api -p 8080:8080 \
               -e DB_USER="${{ secrets.DB_USER }}" \
-              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-              -e DB_HOST="${{ secrets.DB_HOST }}" \
-              -e DB_PORT="${{ secrets.DB_PORT }}" \
-              -e DB_DATABASE="${{ secrets.DB_DATABASE }}" \
-              ${{ secrets.ECR_REPOSITORY_URI }}:api
+              -e DB_PASSWORD="$DB_USER" \
+              -e DB_HOST="$DB_HOST" \
+              -e DB_PORT="$DB_PORT" \
+              -e DB_DATABASE="$DB_DATABASE" \
+              $ECR_REPOSITORY:api
             
             # Cleanup old images
             docker image prune -a -f
