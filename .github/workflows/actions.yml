@@ -55,8 +55,10 @@ jobs:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_KEY }}
         run: |
           # Using ssh-agent to handle the authentication
+          echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} << 'EOF'
             # Pull latest images
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
