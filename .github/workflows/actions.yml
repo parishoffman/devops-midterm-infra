@@ -5,7 +5,36 @@ on:
     branches: [ main ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        repository: ${{{{ secrets.GIT_REPO }}}}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: pip install boto3 paramiko
+
+    - name: Run smoke test
+      env:
+        AWS_AMI_ID: ${{ secrets.AWS_AMI_ID }}
+        AWS_INSTANCE_TYPE: ${{ secrets.AWS_INSTANCE_TYPE }}
+        AWS_KEY_NAME: ${{ secrets.AWS_KEY_NAME }}
+        AWS_SECURITY_GROUP: ${{ secrets.AWS_SECURITY_GROUP }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        SSH_USERNAME: ubuntu
+        GIT_REPO_URL: https://github.com/parishoffman/devops-midterm.git
+      run: python SmokeTest.py
+
   build-and-push:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Repo
@@ -25,20 +54,20 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # - name: Build, tag, and push Docker images
-      #   env:
-      #     ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
-      #     TAG: latest
-      #   run: |
-      #     for service in view api; do
-      #       cd $service
-      #       docker build -t $service .
+      - name: Build, tag, and push Docker images
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
+          TAG: latest
+        run: |
+          for service in view api; do
+            cd $service
+            docker build -t $service .
 
-      #       docker tag $service $ECR_REPOSITORY:$service
+            docker tag $service $ECR_REPOSITORY:$service
 
-      #       docker push $ECR_REPOSITORY:$service
-      #       cd ..
-      #     done
+            docker push $ECR_REPOSITORY:$service
+            cd ..
+          done
           
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.8.0
