@@ -40,11 +40,14 @@ jobs:
       #       cd ..
       #     done
           
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
       - name: SSH into QA EC2 and update services
         env:
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
-          USER_NAME: ubuntu
           AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REPO: ${{ secrets.ECR_REPOSITORY_URI }}
           DB_USER: ${{ secrets.DB_USER }}
@@ -53,12 +56,8 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
         run: |
-          # Write SSH key to file
-          echo "$SSH_KEY" > private_key
-          chmod 600 private_key
-          
-          # Connect and run commands with heredoc
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${EC2_HOST} << 'EOF'
+          # Using ssh-agent to handle the authentication
+          ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} << 'EOF'
             # Pull latest images
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
             
@@ -83,7 +82,4 @@ jobs:
             # Cleanup old images
             docker image prune -a -f
           EOF
-          
-          # Clean up
-          rm private_key
           
