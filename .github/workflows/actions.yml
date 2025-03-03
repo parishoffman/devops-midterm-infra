@@ -80,7 +80,7 @@ jobs:
             
             # Start new containers
             docker run -d --name view -p 5173:5173 $ECR_REPOSITORY:view
-            docker run -d --name api -p 8080:8080 \
+            docker run --name api -p 8080:8080 \
               -e DB_USER="${{ secrets.DB_USER }}" \
               -e DB_PASSWORD="$DB_USER" \
               -e DB_HOST="$DB_HOST" \
