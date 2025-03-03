@@ -9,7 +9,7 @@ instance = ec2.create_instances(
     ImageId=os.getenv('AWS_AMI_ID'),
     MinCount=1, MaxCount=1,
     InstanceType='t2.large',
-    KeyName=os.getenv('AWS_KEY_NAME'),
+    KeyName='SSHkey',
     SecurityGroupIds=[
         'sg-06bc98aae2851c95d', 
         'sg-0b612366973fc03e9',
