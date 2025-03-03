@@ -8,7 +8,7 @@ ec2 = boto3.resource('ec2', region_name='us-east-1')
 instance = ec2.create_instances(
     ImageId=os.getenv('AWS_AMI_ID'),
     MinCount=1, MaxCount=1,
-    InstanceType=os.getenv('AWS_INSTANCE_TYPE', 't2.micro'),
+    InstanceType='t2.large',
     KeyName=os.getenv('AWS_KEY_NAME'),
     SecurityGroups=[os.getenv('AWS_SECURITY_GROUP')],
 )[0]
