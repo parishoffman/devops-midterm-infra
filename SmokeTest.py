@@ -27,7 +27,8 @@ ip = instance.public_ip_address
 time.sleep(30)
 
 # SSH setup
-key = paramiko.RSAKey.from_private_key_file(io.StringIO(os.getenv('SSH_PRIVATE_KEY')))
+private_key_file = io.StringIO(os.getenv('SSH_PRIVATE_KEY'))
+key = paramiko.RSAKey.from_private_key(private_key_file)
 ssh = paramiko.SSHClient()
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ssh.connect(ip, username=os.getenv('SSH_USERNAME', 'ubuntu'), pkey=key)
