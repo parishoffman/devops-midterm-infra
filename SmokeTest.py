@@ -4,7 +4,7 @@ import os
 import time
 
 # AWS credentials are passed via environment variables
-ec2 = boto3.resource('ec2', aws_region='us-east-1')
+ec2 = boto3.resource('ec2', region_name='us-east-1')
 instance = ec2.create_instances(
     ImageId=os.getenv('AWS_AMI_ID'),
     MinCount=1, MaxCount=1,
