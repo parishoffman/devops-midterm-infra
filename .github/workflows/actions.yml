@@ -25,25 +25,26 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build, tag, and push Docker images
-        env:
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
-          TAG: latest
-        run: |
-          for service in view api; do
-            cd $service
-            docker build -t $service .
+      # - name: Build, tag, and push Docker images
+      #   env:
+      #     ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
+      #     TAG: latest
+      #   run: |
+      #     for service in view api; do
+      #       cd $service
+      #       docker build -t $service .
 
-            docker tag $service $ECR_REPOSITORY:$service
+      #       docker tag $service $ECR_REPOSITORY:$service
 
-            docker push $ECR_REPOSITORY:$service
-            cd ..
-          done
+      #       docker push $ECR_REPOSITORY:$service
+      #       cd ..
+      #     done
           
       - name: SSH into QA EC2 and update services
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
+          USER_NAME: ubuntu
           AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REPO: ${{ secrets.ECR_REPOSITORY_URI }}
           DB_USER: ${{ secrets.DB_USER }}
@@ -52,38 +53,37 @@ jobs:
           DB_PORT: ${{ secrets.DB_PORT }}
           DB_DATABASE: ${{ secrets.DB_DATABASE }}
         run: |
-          # Write SSH key using a bash heredoc to prevent GitHub from logging the command
-          cat > ssh-key.pem << 'SSHKEY'
-          $SSH_KEY
-          SSHKEY
+          # Write SSH key to file
+          echo "$SSH_KEY" > private_key
+          chmod 600 private_key
           
-          chmod 600 ssh-key.pem
-          
-          # Connect and run commands
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME}
+          # Connect and run commands with heredoc
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${EC2_HOST} << 'EOF'
             # Pull latest images
-            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
             
             # Stop existing containers if they exist
             docker stop view api || true
             docker rm view api || true
             
             # Pull latest images
-            docker pull $ECR_REPO:view
-            docker pull $ECR_REPO:api
+            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:view
+            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:api
             
             # Start new containers
-            docker run -d --name view -p 5173:5173 $ECR_REPO:view
+            docker run -d --name view -p 5173:5173 ${{ secrets.ECR_REPOSITORY_URI }}:view
             docker run -d --name api -p 8080:8080 \
-              -e DB_USER=$DB_USER \
-              -e DB_PASSWORD=$DB_PASSWORD \
-              -e DB_HOST=$DB_HOST \
-              -e DB_PORT=$DB_PORT \
-              -e DB_DATABASE=$DB_DATABASE \
-              $ECR_REPO:api
+              -e DB_USER="${{ secrets.DB_USER }}" \
+              -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+              -e DB_HOST="${{ secrets.DB_HOST }}" \
+              -e DB_PORT="${{ secrets.DB_PORT }}" \
+              -e DB_DATABASE="${{ secrets.DB_DATABASE }}" \
+              ${{ secrets.ECR_REPOSITORY_URI }}:api
             
             # Cleanup old images
             docker image prune -a -f
           EOF
+          
+          # Clean up
+          rm private_key
           
