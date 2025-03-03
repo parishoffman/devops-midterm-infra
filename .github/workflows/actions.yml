@@ -7,8 +7,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    
-        steps:
+    steps:
       - name: Checkout Source Repo
         uses: actions/checkout@v4
         with:
@@ -29,7 +28,7 @@ jobs:
       - name: Build, tag, and push Docker images
         env:
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
-          TAG: ${{ needs.determine-deployment.outputs.tag }}
+          TAG: latest
         run: |
           for service in view api; do
             cd $service
