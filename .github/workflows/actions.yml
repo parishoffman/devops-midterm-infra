@@ -60,7 +60,8 @@ jobs:
           chmod 600 ssh-key.pem
           
           # Connect and run commands
-          ssh -o StrictHostKeyChecking=no -i ssh-key.pem ubuntu@$EC2_HOST << 'EOF'
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME}
             # Pull latest images
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPO
             
@@ -86,5 +87,3 @@ jobs:
             docker image prune -a -f
           EOF
           
-          # Clean up the key file
-          rm ssh-key.pem
